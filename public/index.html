@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест із SVG</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Інтерактивний тест</h1>
+    
+    <!-- Блок для вибору питання -->
+    <div id="question-selector">
+        <h3>Виберіть питання:</h3>
+        <div id="question-numbers"></div>
+    </div>
+
+    <!-- Основний контейнер для питання -->
+    <div id="question-container">
+        <div id="question-text"></div>
+        <div id="svg-container"></div>
+        <div id="answers"></div>
+        <button id="next-button">Наступне питання</button>
+        <button id="finish-button" style="display: none;">Завершити тест</button>
+    </div>
+
+    <!-- Контейнер для результатів -->
+    <div id="result-container" style="display: none;"></div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
