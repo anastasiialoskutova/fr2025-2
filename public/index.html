@@ -16,16 +16,20 @@
     </div>
 
     <!-- Основний контейнер для питання -->
+    <input type="text" id="username" placeholder="Введіть своє ім'я">
+
     <div id="question-container">
         <div id="question-text"></div>
         <div id="svg-container"></div>
         <div id="answers"></div>
-        <button id="next-button">Наступне питання</button>
-        <button id="finish-button" style="display: none;">Завершити тест</button>
+        <div id="buttons-container">
+            <button id="next-button">Наступне питання</button>
+            <button id="finish-button">Завершити тест</button>
+        </div>
     </div>
 
     <!-- Контейнер для результатів -->
-    <div id="result-container" style="display: none;"></div>
+    <div id="result-container"></div>
     
     <script src="script.js"></script>
 </body>

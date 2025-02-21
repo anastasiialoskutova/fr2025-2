@@ -1,9 +1,8 @@
-// Перемінна для збереження питань
 let questions = [];
 let currentQuestionIndex = 0;
 let score = 0;
 
-// Функція для завантаження питань з JSON файлу
+// Завантаження питань із JSON-файлу
 function loadQuestions() {
     fetch('questions.json')
         .then(response => response.json())
@@ -15,12 +14,11 @@ function loadQuestions() {
         .catch(error => console.error("Помилка завантаження питань:", error));
 }
 
-// Функція для завантаження питання
+// Завантаження питання
 function loadQuestion() {
     const question = questions[currentQuestionIndex];
     document.getElementById("question-text").innerText = question.question;
     
-    // Підключаємо SVG-файл як <img>
     document.getElementById("svg-container").innerHTML = `<img src="${question.svg}" alt="SVG Image" width="100">`;
 
     const answersContainer = document.getElementById("answers");
@@ -33,70 +31,93 @@ function loadQuestion() {
         answersContainer.appendChild(button);
     });
 
-    // Оновлюємо інтерфейс кнопок
-    document.getElementById("next-button").style.display = "block";
-    document.getElementById("finish-button").style.display = "none";
+    // Оновлення кнопок
+    document.getElementById("next-button").style.display = (currentQuestionIndex < questions.length - 1) ? "block" : "none";
+    document.getElementById("finish-button").style.display = (currentQuestionIndex === questions.length - 1) ? "block" : "none";
 }
 
-// Функція для вибору відповіді
+// Обробка вибору відповіді
 function selectAnswer(selectedIndex) {
     const question = questions[currentQuestionIndex];
     const correctIndex = question.correct;
 
-    // Якщо відповідь правильна, збільшуємо рахунок
     if (selectedIndex === correctIndex) {
         score++;
     }
 
-    // Додати візуальний ефект для правильної/неправильної відповіді
+    // Позначаємо правильну/неправильну відповідь кольорами
     const answersButtons = document.getElementById("answers").children;
-    for (let i = 0; i < answersButtons.length; i++) {
-        const button = answersButtons[i];
-        if (i === correctIndex) {
-            button.style.backgroundColor = "green"; // Правильна відповідь
-        } else {
-            button.style.backgroundColor = "red"; // Неправильна відповідь
-        }
+for (let i = 0; i < answersButtons.length; i++) {
+    // Видаляємо попередні класи, якщо вони є
+    answersButtons[i].classList.remove('correct', 'incorrect');
+    
+    // Додаємо правильний клас для кожної кнопки
+    if (i === correctIndex) {
+        answersButtons[i].classList.add('correct');
+    } else {
+        answersButtons[i].classList.add('incorrect');
     }
-
-    // Відключаємо кнопки після вибору
-    const buttons = document.querySelectorAll("#answers button");
-    buttons.forEach(button => button.disabled = true);
-
-    // Показуємо кнопку "Наступне питання"
-    document.getElementById("next-button").style.display = "block";
 }
 
-// Функція для переходу до наступного питання
+    
+
+    // Деактивація кнопок після вибору
+    document.querySelectorAll("#answers button").forEach(button => button.disabled = true);
+
+    // Відображаємо потрібну кнопку
+    document.getElementById("next-button").style.display = (currentQuestionIndex < questions.length - 1) ? "block" : "none";
+    document.getElementById("finish-button").style.display = (currentQuestionIndex === questions.length - 1) ? "block" : "none";
+}
+
+// Перехід до наступного питання
 function nextQuestion() {
     currentQuestionIndex++;
-
-    if (currentQuestionIndex >= questions.length) {
-        // Якщо це останнє питання, показуємо результат
-        showResults();
-    } else {
-        // Завантажуємо наступне питання
-        loadQuestion();
-        updateQuestionSelector();
-    }
+    loadQuestion();
 }
 
-// Функція для завершення тесту
+// Завершення тесту
 function finishTest() {
+    // Приховуємо поле введення імені
+    document.getElementById("username").style.display = "none";
+    
     showResults();
+    saveResults();
 }
 
-// Функція для показу результатів
+
+// Відображення результатів
 function showResults() {
+    const username = document.getElementById("username").value || "Анонім";
+    const previousScore = localStorage.getItem('testResult') || "Немає попереднього результату";
+
     document.getElementById("question-container").style.display = "none";
     document.getElementById("result-container").style.display = "block";
-    document.getElementById("result-container").innerHTML = `Ваш результат: ${score} з 5`;
+    document.getElementById("result-container").innerHTML = `
+        <p>${username}, ваш результат: ${score} з ${questions.length}</p>
+        <p>Попередній результат: ${previousScore}</p>
+    `;
 
-    // Зберігаємо результат у LocalStorage
     localStorage.setItem('testResult', score);
 }
 
-// Оновлюємо блок вибору питань
+// Збереження результатів у JSON
+function saveResults() {
+    const username = document.getElementById("username").value || "Анонім";
+    const date = new Date().toISOString().split("T")[0];
+
+    const resultData = { name: username, date: date, score: score };
+
+    fetch("http://localhost:3000/save-result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resultData),
+    })
+    .then(response => response.json())
+    .then(data => console.log("Результат збережено:", data))
+    .catch(error => console.error("Помилка збереження:", error));
+}
+
+// Оновлення вибору питань
 function updateQuestionSelector() {
     const questionNumbersContainer = document.getElementById("question-numbers");
     questionNumbersContainer.innerHTML = "";
@@ -109,15 +130,15 @@ function updateQuestionSelector() {
     });
 }
 
-// Перехід до конкретного питання
+// Перехід до вибраного питання
 function goToQuestion(index) {
     currentQuestionIndex = index;
     loadQuestion();
 }
 
-// Обробник подій
+// Додаємо обробники подій
 document.getElementById("next-button").addEventListener("click", nextQuestion);
 document.getElementById("finish-button").addEventListener("click", finishTest);
 
-// Завантажуємо питання
+// Завантаження питань
 loadQuestions();

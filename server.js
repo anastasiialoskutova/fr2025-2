@@ -1,60 +1,72 @@
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
-
+const path = require("path");
 const app = express();
 const PORT = 3000;
 
+// Використовуємо cors для дозволу запитів з різних доменів
 app.use(cors());
+
+// Для парсингу JSON запитів
 app.use(express.json());
-app.use(express.static("public")); // Віддаємо статичні файли
+
+// Віддаємо статичні файли з папки public
+app.use(express.static("public"));
+
+// Перевіряємо, чи існує results.json, якщо ні — створюємо порожній масив
+const resultsFile = "results.json";
+if (!fs.existsSync(resultsFile)) {
+    fs.writeFileSync(resultsFile, "[]", "utf8");
+}
 
 // Завантаження питань
 app.get("/questions", (req, res) => {
-    fs.readFile("public/questions.json", "utf8", (err, data) => {
+    fs.readFile(path.join(__dirname, "public", "questions.json"), "utf8", (err, data) => {
         if (err) {
-            res.status(500).json({ message: "Помилка зчитування питань" });
-        } else {
-            res.json(JSON.parse(data));
+            console.error("Помилка зчитування питань:", err);
+            return res.status(500).json({ message: "Помилка зчитування питань" });
         }
+        res.json(JSON.parse(data));
     });
 });
 
 // Збереження результатів у JSON-файл
+// Обробник POST-запиту для збереження результату
 app.post("/save-result", (req, res) => {
     const newResult = req.body;
-    fs.readFile("results.json", "utf8", (err, data) => {
+
+    // Перевірка коректності структури даних
+    if (!newResult.name || !newResult.date || newResult.score === undefined) {
+        return res.status(400).json({ message: "Невірний формат результату" });
+    }
+
+    // Зчитуємо поточні результати
+    fs.readFile(resultsFile, "utf8", (err, data) => {
         let results = [];
-        if (err) {
-            // Якщо є помилка зчитування (наприклад, файл не існує або пошкоджений), просто ініціалізуємо порожній масив
-            if (err.code === 'ENOENT') {
-                console.log("Файл не знайдений, ініціалізуємо порожній масив.");
-            } else {
-                res.status(500).json({ message: "Помилка зчитування результату" });
-                return;
-            }
-        } else {
+
+        if (!err) {
             try {
                 results = JSON.parse(data);
             } catch (parseError) {
-                // Якщо файл пошкоджений або має неправильний формат, ініціалізуємо порожній масив
-                console.log("Помилка парсингу JSON, ініціалізуємо порожній масив.");
+                console.error("Помилка парсингу JSON. Створюємо новий файл.");
                 results = [];
             }
         }
 
+        // Додаємо новий результат
         results.push(newResult);
 
-        fs.writeFile("results.json", JSON.stringify(results, null, 2), (err) => {
+        // Записуємо в файл
+        fs.writeFile(resultsFile, JSON.stringify(results, null, 2), (err) => {
             if (err) {
-                res.status(500).json({ message: "Помилка збереження результату" });
-            } else {
-                res.json({ message: "Результат збережено!" });
+                console.error("Помилка збереження результату:", err);
+                return res.status(500).json({ message: "Помилка збереження результату" });
             }
+            res.json({ message: "Результат збережено!", data: newResult });
         });
     });
 });
-
 
 app.listen(PORT, () => {
     console.log(`Сервер запущено на http://localhost:${PORT}`);
